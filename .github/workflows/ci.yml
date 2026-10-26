@@ -20,28 +20,33 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
       - name: Install Verilator
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends verilator
           verilator --version
+
       - name: Lint RTL
         run: make lint
 
   simulate:
-    name: Simulate (Icarus Verilog)
+    name: Simulate (Verilator)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Install Icarus Verilog
+
+      - name: Install Verilator
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends iverilog
-          iverilog -V | head -n 1
-      - name: Run testbenches
+          sudo apt-get install -y --no-install-recommends verilator
+          verilator --version
+
+      - name: Run SystemVerilog testbenches
         run: make test
-      - name: Upload logs and waveforms
+
+      - name: Upload simulation outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:

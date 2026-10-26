@@ -1,56 +1,72 @@
 #!/usr/bin/env bash
-# Compile and run testbenches with Icarus Verilog.
-#   scripts/run_tests.sh            -> every tb/tb_*.v (and .sv)
-#   scripts/run_tests.sh tb_alu     -> just tb/tb_alu.v
-#
-# Convention every testbench must follow:
-#   - print a line containing "FAIL" for each failed check
-#   - print "TEST PASSED" at the very end only if nothing failed
-# iverilog/vvp return exit code 0 even when checks fail, so we decide
-# pass/fail by reading the log.
+# Compile and run SystemVerilog testbenches with Verilator.
+#   scripts/run_tests.sh         -> every tb/tb_*.v and tb/tb_*.sv
+#   scripts/run_tests.sh tb_alu  -> just tb/tb_alu.v or tb/tb_alu.sv
+
 set -uo pipefail
-cd "$(dirname "$0")/.."          # always run from repo root so $readmemh paths like "sw/prog.hex" work
+cd "$(dirname "$0")/.."
 
 OUT=build/sim
-TIMEOUT=${SIM_TIMEOUT:-120}      # seconds per testbench, catches infinite loops
+TIMEOUT=${SIM_TIMEOUT:-120}
 mkdir -p "$OUT"
 
 mapfile -t RTL < <(find rtl \( -name '*.v' -o -name '*.sv' \) 2>/dev/null | sort)
 
 if [ $# -gt 0 ]; then
   TBS=()
-  for n in "$@"; do TBS+=("tb/$n.v"); done
+  for n in "$@"; do
+    tb=""
+    for ext in v sv; do
+      if [ -f "tb/$n.$ext" ]; then
+        tb="tb/$n.$ext"
+        break
+      fi
+    done
+    if [ -z "$tb" ]; then
+      echo "Testbench not found: tb/$n.v or tb/$n.sv"
+      exit 1
+    fi
+    TBS+=("$tb")
+  done
 else
   shopt -s nullglob
   TBS=(tb/tb_*.v tb/tb_*.sv)
 fi
 
 if [ ${#TBS[@]} -eq 0 ]; then
-  echo "No testbenches found (expected tb/tb_*.v)"
+  echo "No testbenches found (expected tb/tb_*.v or tb/tb_*.sv)"
   exit 1
 fi
 
-passed=(); failed=()
+passed=()
+failed=()
+
 for tb in "${TBS[@]}"; do
   name=$(basename "${tb%.*}")
+  obj="$OUT/obj_$name"
   echo "=== $name ==="
 
-  if ! iverilog -g2012 -Wall -Wno-timescale -Irtl -s "$name" -o "$OUT/$name.vvp" "${RTL[@]}" "$tb" 2>&1 \
-        | tee "$OUT/$name.compile.log"; then
-    failed+=("$name (compile error)"); continue
+  if ! verilator --binary --timing --trace --Wno-fatal 
+        -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Irtl 
+        --top-module "$name" --Mdir "$obj" 
+        "${RTL[@]}" "$tb" 
+        > "$OUT/$name.compile.log" 2>&1; then
+    cat "$OUT/$name.compile.log"
+    failed+=("$name (compile error)")
+    continue
   fi
 
-  timeout "$TIMEOUT" vvp -n "$OUT/$name.vvp" 2>&1 | tee "$OUT/$name.log"
-  rc=${PIPESTATUS[0]}
-
-  if [ "$rc" -eq 124 ]; then
-    failed+=("$name (timeout after ${TIMEOUT}s)")
-  elif [ "$rc" -ne 0 ]; then
-    failed+=("$name (simulator exit code $rc)")
+  if ! timeout "$TIMEOUT" "$obj/V$name" 2>&1 | tee "$OUT/$name.log"; then
+    rc=${PIPESTATUS[0]}
+    if [ "$rc" -eq 124 ]; then
+      failed+=("$name (timeout after ${TIMEOUT}s)")
+    else
+      failed+=("$name (simulator exit code $rc)")
+    fi
   elif grep -q 'FAIL' "$OUT/$name.log"; then
     failed+=("$name (check failed)")
   elif ! grep -q 'TEST PASSED' "$OUT/$name.log"; then
-    failed+=("$name (no 'TEST PASSED' line, did it reach the end?)")
+    failed+=("$name (no 'TEST PASSED' line)")
   else
     passed+=("$name")
   fi
@@ -60,4 +76,5 @@ echo
 echo "================ SUMMARY ================"
 echo "passed: ${#passed[@]}   failed: ${#failed[@]}"
 for f in "${failed[@]}"; do echo "  FAILED: $f"; done
+
 [ ${#failed[@]} -eq 0 ]
