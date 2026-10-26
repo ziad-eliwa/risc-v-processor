@@ -1,3 +1,26 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 10/26/2026 02:10:42 PM
+// Design Name: 
+// Module Name: shifter
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+
 module prv32_ALU(
 	input   wire [31:0] a, b,
 	input   wire [4:0]  shamt,
@@ -18,7 +41,7 @@ module prv32_ALU(
     assign vf = (a[31] ^ (op_b[31]) ^ add[31] ^ cf);
     
     wire[31:0] sh;
-    shifter shifter0(.a(a), .shamt(shamt), .type(alufn[1:0]),  .r(sh));
+    shifter shifter0(.a(a), .shamt(shamt), .stype(alufn[1:0]),  .r(sh));
     
     always @ * begin
         r = 0;
