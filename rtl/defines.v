@@ -50,3 +50,5 @@
 
 `define     SYS_EC_EB       3'b000
 
+`define CLK_P 'd10
+
