@@ -11,7 +11,7 @@
 #
 # Override the RTL top module for linting with: make lint TOP=my_top
 
-TOP ?= cpu_top
+TOP ?= cpu
 RTL := $(shell find rtl \( -name '*.v' -o -name '*.sv' \) 2>/dev/null | sort)
 TB_FILES := $(shell find tb \( -name 'tb_*.v' -o -name 'tb_*.sv' \) 2>/dev/null | sort)
 

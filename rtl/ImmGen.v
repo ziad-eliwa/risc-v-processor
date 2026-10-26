@@ -22,7 +22,7 @@
 
 `include "defines.v"
 
-module rv32_ImmGen (
+module ImmGen (
     input  wire [31:0]  IR,
     output reg  [31:0]  Imm
 );
