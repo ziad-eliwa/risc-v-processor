@@ -28,14 +28,14 @@ module register_file #(parameter N = 32)(
     output [N-1:0] readdata1, readdata2
 );
     wire [31:0] loads;
-    Decoder5by32 dec(.in(writereg),.En(regwrite),.out(loads));
+    decoder_5_by_32 dec(.in(writereg),.En(regwrite),.out(loads));
     
     wire [N-1:0] Q [31:0];    
 
     genvar i;
     generate 
         for(i=0; i<32; i=i+1) begin
-            N_register #(N) register(.clk(clk),.load(loads[i]),
+            nbit_register #(N) register(.clk(clk),.load(loads[i]),
             .rst(rst),.D(writedata),.Q(Q[i]));
         end
     endgenerate

@@ -28,7 +28,7 @@ module nbit_register #(parameter N = 32) (
     generate
         for(i = 0; i<N; i=i+1) begin
             mux2x1 mux(Q[i], D[i], load, Dmux[i]);
-            DFlipFlop dff(clk, rst, Dmux[i], Q[i]);
+            dff dff(clk, rst, Dmux[i], Q[i]);
         end
     endgenerate
 endmodule
