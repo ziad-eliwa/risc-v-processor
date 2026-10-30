@@ -39,3 +39,4 @@ module alu_control_unit(
             default: alucn = 4'b0000;
         endcase
     end
+endmodule
