@@ -1,23 +1,17 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 10/26/2026 02:10:42 PM
-// Design Name: 
-// Module Name: shifter
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
+
+/*******************************************************************
+*
+* Module: prv32_ALU.v
+* Project: risc-v-processor
+* Author: Ziad Eliwa ziadeliwa@aucegypt.end
+          Mostafa Abdelwahed mostafabahaa@aucegypt.edu
+* Description: put your description here
+*
+* Change history: 26/10/26 – Added verilog source from attached sources - Ziad Eliwa
+* 30/10/26 – Removed shamt and unused variables - Mostafa Abdelwahed
+*
+**********************************************************************/
 
 
 module prv32_ALU(
