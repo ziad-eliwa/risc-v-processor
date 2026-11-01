@@ -53,6 +53,8 @@ module prv32_ALU(
             // slt & sltu
             4'b11_01:  r = {31'b0,(sf != vf)}; //slt, slti
             4'b11_11:  r = {31'b0,(~cf)}; //sltu, sltiu
+            
+            default: ;
         endcase
     end
 endmodule
