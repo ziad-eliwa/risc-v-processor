@@ -27,7 +27,7 @@ module imm_generator (
     output reg  [31:0]  imm
 );
     always @(*) begin
-        case (`OPCODE)
+        case (instr[`IR_opcode])
             `OPCODE_Arith_I   : 	imm = { {21{instr[31]}}, instr[30:25], instr[24:21], instr[20] };
             `OPCODE_Store     :     imm = { {21{instr[31]}}, instr[30:25], instr[11:8], instr[7] };
             `OPCODE_LUI       :     imm = { instr[31], instr[30:20], instr[19:12], 12'b0 };
