@@ -23,7 +23,7 @@ module cpu(
     input clk, rst
 );
     wire [31:0] instruction;
-    wire Branch, MemRead, MemtoReg, MemWrite, ALUSrc1, RegWrite, Jump, PCSrc, PCJumpSel;
+    wire Branch, MemRead, MemtoReg, MemWrite, ALUSrc1, RegWrite, Jump, PCSrc, PCJumpSel, HultSel;
     wire [1:0] ALUSrc2;
     wire [2:0] ALUOp;
     wire [3:0] ALUCtrl;
@@ -34,7 +34,7 @@ module cpu(
 
     nbit_register #(32) PC(.clk(clk),.load(1),.rst(rst),.D(PCIn),.Q(PCOut));
     
-    instr_mem iMem(.addr(PCOut[7:2]),.data_out(instruction));
+    instr_mem iMem(.addr(PCOut),.data_out(instruction));
    
     register_file RF(.clk(clk),.rst(rst),.readreg1(instruction[19:15]),
         .readreg2(instruction[24:20]),.writereg(instruction[11:7])
@@ -45,7 +45,7 @@ module cpu(
     
     control_unit CU(.opcode(instruction[6:0]),.bit20(instruction[20]),.Branch(Branch),.Jump(Jump),
         .MemRead(MemRead),.MemtoReg(MemtoReg),.MemWrite(MemWrite),
-        .ALUSrc1(ALUSrc1),.ALUSrc2(ALUSrc2),.RegWrite(RegWrite),.ALUOp(ALUOp),.PCSrc(PCSrc));
+        .ALUSrc1(ALUSrc1),.ALUSrc2(ALUSrc2),.RegWrite(RegWrite),.ALUOp(ALUOp),.PCSrc(PCSrc),.HultSel(HultSel));
 
     alu_control_unit aluCU(.ALUOp(ALUOp),.funct3(instruction[14:12]),
         .funct7b5(instruction[30]),.alucn(ALUCtrl));
@@ -58,7 +58,7 @@ module cpu(
         
     prv32_ALU alu(.a(ALUOper1),.b(ALUOper2),.r(ALUResult),.cf(cf),.zf(zf),.vf(vf),.sf(sf),.alucn(ALUCtrl));
         
-    data_mem dMem(.clk(clk),.addr(ALUResult[7:2]),.funct3(instruction[14:12]),.MemRead(MemRead), 
+    data_mem dMem(.clk(clk),.addr(ALUResult),.funct3(instruction[14:12]),.MemRead(MemRead), 
          .MemWrite(MemWrite),.data_in(readData2),.data_out(dataMemOut)); 
             
     nbit_mux2by1 muxMemToReg(.A(ALUResult),.B(dataMemOut),
@@ -71,6 +71,6 @@ module cpu(
         
     nbit_mux2by1 mux2(.A(PCOut),.B(readData1),.sel(PCSrc),.Out(jalrOffset));
     wire [31:0] AddRes;
-    nbit_mux2by1 hult(.A(PCOut),.B(AddRes),.sel(),.Out(PCIn));
+    nbit_mux2by1 hult(.A(PCOut),.B(AddRes),.sel(HultSel),.Out(PCIn));
     assign AddRes = jalrOffset + branchOffset;    
 endmodule
