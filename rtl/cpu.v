@@ -20,8 +20,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module cpu(
-    input clk, rst
+    input clk, rst,
 );
+
     wire [31:0] instruction;
     wire Branch, MemRead, MemtoReg, MemWrite, ALUSrc1, RegWrite, Jump, PCSrc, PCJumpSel, Jalr, HaltSel;
     wire [1:0] ALUSrc2;
