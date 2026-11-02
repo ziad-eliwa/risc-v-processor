@@ -28,7 +28,7 @@
 module control_unit (
     input [6:0] opcode, input bit20,
     output reg Branch, Jump, MemRead, MemtoReg, MemWrite,
-               ALUSrc1, RegWrite, PCSrc, HaltSel,
+               ALUSrc1, RegWrite, PCSrc, Jalr, HaltSel,
     output reg [2:0] ALUOp,
     output reg [1:0] ALUSrc2
 );
@@ -39,57 +39,58 @@ module control_unit (
         MemRead  = 1'b0;
         MemtoReg = 1'b0;
         MemWrite = 1'b0;
-        ALUSrc2  = 2'b00;
         ALUSrc1  = 1'b0;
+        ALUSrc2  = 2'b00;
         RegWrite = 1'b0;
         PCSrc    = 1'b0;
         ALUOp    = 3'b000;
-        HaltSel = 1'b0;
+        Jalr     = 1'b0;
+        HaltSel  = 1'b0;
 
         if (opcode[1:0] == 2'b11) begin
             if (opcode[6:2] == 5'b01100) begin
                 // R-Type
-                ALUSrc2  = 2'b00;
                 ALUSrc1  = 1'b0;
+                ALUSrc2  = 2'b00;
                 RegWrite = 1'b1;
                 ALUOp    = 3'b010;
 
             end else if (opcode[6:2] == 5'b00100) begin
                 // I-Type arithmetic
-                ALUSrc2  = 2'b00;
-                ALUSrc1  = 1'b1;
+                ALUSrc1  = 1'b0;
+                ALUSrc2  = 2'b01;
                 RegWrite = 1'b1;
-                ALUOp    = 3'b010;
+                ALUOp    = 3'b011;
 
             end else if (opcode[6:2] == 5'b00000) begin
                 // Load
                 MemRead  = 1'b1;
                 MemtoReg = 1'b1;
-                ALUSrc2  = 2'b00;
-                ALUSrc1  = 1'b1;
+                ALUSrc1  = 1'b0;
+                ALUSrc2  = 2'b01;
                 RegWrite = 1'b1;
                 ALUOp    = 3'b000;
 
             end else if (opcode[6:2] == 5'b01000) begin
                 // Store
                 MemWrite = 1'b1;
-                ALUSrc2  = 2'b00;
-                ALUSrc1  = 1'b1;
+                ALUSrc1  = 1'b0;
+                ALUSrc2  = 2'b01;
                 ALUOp    = 3'b000;
 
             end else if (opcode[6:2] == 5'b11000) begin
                 // Branch
                 Branch   = 1'b1;
-                ALUSrc2  = 2'b00;
                 ALUSrc1  = 1'b0;
+                ALUSrc2  = 2'b00;
                 ALUOp    = 3'b001;
 
             end else if (opcode[6:2] == 5'b11011) begin
                 // JAL
                 Jump     = 1'b1;
-                PCSrc    = 1'b1;
-                ALUSrc2  = 2'b10;
+                PCSrc    = 1'b0;
                 ALUSrc1  = 1'b1;
+                ALUSrc2  = 2'b10;
                 RegWrite = 1'b1;
                 ALUOp    = 3'b000;
 
@@ -97,17 +98,18 @@ module control_unit (
                 // JALR
                 Jump     = 1'b1;
                 PCSrc    = 1'b1;
-                ALUSrc2  = 2'b10;
                 ALUSrc1  = 1'b1;
+                ALUSrc2  = 2'b10;
                 RegWrite = 1'b1;
                 ALUOp    = 3'b000;
+                Jalr     = 1'b1;
 
             end else if (opcode[6:2] == 5'b01101) begin
                 // LUI
-                ALUSrc2  = 2'b01;
                 ALUSrc1  = 1'b0;
+                ALUSrc2  = 2'b01;
                 RegWrite = 1'b1;
-                ALUOp    = 3'b000;
+                ALUOp    = 3'b100;
 
             end else if (opcode[6:2] == 5'b00101) begin
                 // AUIPC
