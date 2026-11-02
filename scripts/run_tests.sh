@@ -48,11 +48,10 @@ for tb in "${TBS[@]}"; do
   echo "=== $name ==="
 
   if ! verilator --binary --timing --trace --Wno-fatal \
-    -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
-    -Irtl -Itb \
-    --top-module "$name" --Mdir "$obj" \
-    "${RTL[@]}" "$tb" \
-    > "$OUT/$name.compile.log" 2>&1; then
+        -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Irtl -Itb \
+        --top-module "$name" --Mdir "$obj" \
+        "${RTL[@]}" "$tb"  \
+        > "$OUT/$name.compile.log" 2>&1; then
     cat "$OUT/$name.compile.log"
     failed+=("$name (compile error)")
     continue
@@ -67,7 +66,7 @@ for tb in "${TBS[@]}"; do
     fi
   elif grep -q 'FAIL' "$OUT/$name.log"; then
     failed+=("$name (check failed)")
-  elif ! grep -q 'TEST PASSED' "$OUT/$name.log"; then
+  elif ! grep -Eq 'TEST PASSED|TESTS PASSED' "$OUT/$name.log"; then
     failed+=("$name (no 'TEST PASSED' line)")
   else
     passed+=("$name")
