@@ -23,4 +23,11 @@
 module instr_mem (input [31:0] addr, output [31:0] data_out);
     reg [31:0] mem [0:63];
     assign data_out = mem[addr[7:2]];
+
+    integer i;
+    
+    initial begin
+        for (i = 0; i < 64; i = i + 1)
+            mem[i] = 32'h00000013; // NOP (ADDI x0, x0, 0)
+    end
 endmodule
