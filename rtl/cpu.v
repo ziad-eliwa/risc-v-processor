@@ -71,6 +71,6 @@ module cpu(
         
     nbit_mux2by1 mux2(.A(PCOut),.B(readData1),.sel(PCSrc),.Out(jalrOffset));
     wire [31:0] AddRes;
-    nbit_mux2by1 halt(.A(PCOut),.B(AddRes),.sel(HaltSel),.Out(PCIn));
+    nbit_mux2by1 halt(.A(AddRes),.B(PCOut),.sel(HaltSel),.Out(PCIn));
     assign AddRes = jalrOffset + branchOffset;    
 endmodule
