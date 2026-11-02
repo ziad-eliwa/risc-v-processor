@@ -21,8 +21,8 @@ initial begin
     #2;
     if (!(out === 1'b1)) begin $display("FAIL: select B one"); errors = errors + 1; end
     else $display("PASS: select B one");
-    if (errors == 0) $display("ALL mux2x1 TESTS PASSED");
-    else $display("mux2x1: %0d FAILED", errors);
+    if (errors == 0) $display("ALL mux2x1 TEST PASSED");
+    else $display("mux2x1: %0d FAIL", errors);
     $finish;
 end
 endmodule

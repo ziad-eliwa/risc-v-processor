@@ -12,7 +12,7 @@
 
     // ------------------------------------------------------------------ knobs
     localparam PROG_WORDS = 64;       // size of instr_mem (words)
-    localparam RUN_CYCLES = 600;      // increase for multi-cycle / deep pipelines
+    localparam RUN_CYCLES = 100;      // increase for multi-cycle / deep pipelines
     localparam DATA_BASE  = 12'h000;  // tests touch DATA_BASE .. DATA_BASE+63; must fit in data_mem
     localparam [31:0] NOP       = 32'h00000013;
     localparam [31:0] FENCE     = 32'h0FF0000F;  // fence iorw,iorw

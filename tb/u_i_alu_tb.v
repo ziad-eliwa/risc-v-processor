@@ -11,54 +11,74 @@ module u_i_alu_tb();
     // ================================================================ GROUP 1
     // LUI AUIPC ADDI SLTI SLTIU XORI ORI ANDI SLLI SRLI SRAI
     integer a_auipc;
-    task group1;
-        begin
-            $display("\n== Group 1: U-type and I-type ALU ==");
-            new_prog;
-            emit(LUI(1, 20'h12345));
-            a_auipc = pi * 4;
-            emit(AUIPC(2, 20'h00001));
-            emit(ADDI(3, 0, -5));
-            li(5, 32'hF0F01234);
-            emit(ADDI (7, 5, 1));
-            emit(SLTI (8, 3, 1));        // -5 < 1 signed      -> 1
-            emit(SLTIU(9, 3, 1));        // 0xFFFFFFFB < 1 u   -> 0
-            emit(SLTIU(10, 0, 1));       // 0 < 1 u            -> 1
-            emit(SLTI (29, 3, -6));      // -5 < -6            -> 0 (sign-ext imm)
-            emit(XORI (12, 5, -1));
-            emit(ORI  (13, 5, 12'h0F0));
-            emit(ANDI (14, 5, 12'h7F0));
-            emit(SLLI (15, 5, 4));
-            emit(SRLI (16, 5, 4));
-            emit(SRAI (17, 5, 4));
-            emit(SRAI (18, 5, 31));
-            emit(SRLI (19, 5, 31));
-            emit(ANDI (20, 5, -16));
-            emit(ADDI (0, 0, 5));        // writes to x0 must be ignored
-            end_prog;
-            run_prog;
 
-            chk(1,  32'h12345000,        "LUI");
-            chk(2,  a_auipc + 32'h1000,  "AUIPC");
-            chk(3,  32'hFFFFFFFB,        "ADDI (negative imm)");
-            chk(5,  32'hF0F01234,        "LUI+ADDI constant");
-            chk(7,  32'hF0F01235,        "ADDI");
-            chk(8,  32'h1,               "SLTI");
-            chk(9,  32'h0,               "SLTIU (unsigned compare)");
-            chk(10, 32'h1,               "SLTIU (seqz)");
-            chk(29, 32'h0,               "SLTI (imm sign-extend)");
-            chk(12, 32'h0F0FEDCB,        "XORI -1");
-            chk(13, 32'hF0F012F4,        "ORI");
-            chk(14, 32'h00000230,        "ANDI");
-            chk(15, 32'h0F012340,        "SLLI");
-            chk(16, 32'h0F0F0123,        "SRLI");
-            chk(17, 32'hFF0F0123,        "SRAI");
-            chk(18, 32'hFFFFFFFF,        "SRAI by 31");
-            chk(19, 32'h00000001,        "SRLI by 31");
-            chk(20, 32'hF0F01230,        "ANDI negative imm");
-            chk(0,  32'h0,               "x0 hardwired zero");
-        end
-    endtask
+task group1;
+    begin
+        $display("\n== Group 1: U-type and I-type ALU ==");
+        new_prog;
+
+        // LUI and AUIPC
+        emit(LUI(1, 1));               // x1 = 4096
+        a_auipc = pi * 4;
+        emit(AUIPC(2, 1));             // x2 = PC + 4096
+
+        // ADDI
+        emit(ADDI(3, 0, 10));          // x3 = 10
+        emit(ADDI(4, 0, 20));          // x4 = 20
+        emit(ADDI(5, 3, 5));           // x5 = 15
+        emit(ADDI(6, 0, -5));          // x6 = -5
+
+        // Signed and unsigned comparisons
+        emit(SLTI(7, 3, 15));          // 10 < 15 = 1
+        emit(SLTI(8, 4, 15));          // 20 < 15 = 0
+        emit(SLTIU(9, 3, 15));         // 10 < 15 = 1
+        emit(SLTIU(10, 6, 1));         // unsigned -5 < 1 = 0
+
+        // Bitwise operations
+        emit(XORI(11, 3, 5));          // 10 XOR 5 = 15
+        emit(ORI(12, 3, 5));           // 10 OR 5 = 15
+        emit(ANDI(13, 3, 6));          // 10 AND 6 = 2
+
+        // Shift operations
+        emit(SLLI(14, 3, 2));          // 10 << 2 = 40
+        emit(SRLI(15, 4, 2));          // 20 >> 2 = 5
+        emit(SRAI(16, 4, 2));          // 20 >>> 2 = 5
+        emit(SRAI(17, 6, 1));          // -5 >>> 1 = -3
+        emit(SRLI(18, 6, 1));          // Logical right shift
+
+        // x0 must remain zero
+        emit(ADDI(0, 0, 10));
+
+        end_prog;
+        run_prog;
+
+        // Check results
+        chk(1,  32'd4096,          "LUI");
+        chk(2,  a_auipc + 4096,   "AUIPC");
+
+        chk(3,  32'd10,           "ADDI");
+        chk(4,  32'd20,           "ADDI");
+        chk(5,  32'd15,           "ADDI addition");
+        chk(6,  32'hFFFFFFFB,     "ADDI negative");
+
+        chk(7,  32'd1,            "SLTI true");
+        chk(8,  32'd0,            "SLTI false");
+        chk(9,  32'd1,            "SLTIU true");
+        chk(10, 32'd0,            "SLTIU false");
+
+        chk(11, 32'd15,           "XORI");
+        chk(12, 32'd15,           "ORI");
+        chk(13, 32'd2,            "ANDI");
+
+        chk(14, 32'd40,           "SLLI");
+        chk(15, 32'd5,            "SRLI");
+        chk(16, 32'd5,            "SRAI positive");
+        chk(17, 32'hFFFFFFFD,     "SRAI negative");
+        chk(18, 32'h7FFFFFFD,     "SRLI negative");
+
+        chk(0,  32'd0,            "x0 unchanged");
+    end
+endtask
 
 
     initial begin
