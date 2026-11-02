@@ -13,7 +13,7 @@ initial begin
  load=1;
  @(posedge clk);#1; if(Q !== 32'hAABBCCDD) begin $display("FAIL second load");errors=errors+1;end
  rst=1;#1; if(Q !== 0) begin $display("FAIL asynchronous reset");errors=errors+1;end
- if(errors==0) $display("ALL nbit_register TESTS PASSED");else $display("nbit_register FAILED: %0d",errors);
+ if(errors==0) $display("ALL nbit_register TEST PASSED");else $display("nbit_register FAIL: %0d",errors);
  $finish;
 end
 endmodule

@@ -15,7 +15,7 @@ initial begin
  regwrite=0;writereg=1;writedata=0;readreg1=1;
  @(posedge clk);#1; if(readdata1 !== 32'h12345678) begin $display("FAIL no write");errors=errors+1;end
  rst=1;#1; if(readdata1 !== 0 || readdata2 !== 0) begin $display("FAIL reset");errors=errors+1;end
- if(errors==0) $display("ALL register_file TESTS PASSED");else $display("register_file FAILED: %0d",errors);
+ if(errors==0) $display("ALL register_file TEST PASSED");else $display("register_file FAIL: %0d",errors);
  $finish;
 end
 endmodule

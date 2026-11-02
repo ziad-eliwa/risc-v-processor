@@ -53,8 +53,8 @@ initial begin
     #2;
     if (!(!RegWrite && !MemRead && !MemWrite && !Branch && !Jump)) begin $display("FAIL: unknown opcode"); errors = errors + 1; end
     else $display("PASS: unknown opcode");
-    if (errors == 0) $display("ALL control_unit TESTS PASSED");
-    else $display("control_unit: %0d FAILED", errors);
+    if (errors == 0) $display("ALL control_unit TEST PASSED");
+    else $display("control_unit: %0d FAIL", errors);
     $finish;
 end
 endmodule

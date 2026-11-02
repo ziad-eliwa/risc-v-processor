@@ -29,8 +29,8 @@ initial begin
     #2;
     if (!(out === 32'h00000000)) begin $display("FAIL: disabled again"); errors = errors + 1; end
     else $display("PASS: disabled again");
-    if (errors == 0) $display("ALL decoder_5_by_32 TESTS PASSED");
-    else $display("decoder_5_by_32: %0d FAILED", errors);
+    if (errors == 0) $display("ALL decoder_5_by_32 TEST PASSED");
+    else $display("decoder_5_by_32: %0d FAIL", errors);
     $finish;
 end
 endmodule

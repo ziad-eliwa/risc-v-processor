@@ -78,7 +78,7 @@ module loads_stores_tb();
         group3;
         $display("\n==================================================");
         $display(" %0d / %0d checks passed", passed, total);
-        if (failed == 0) $display(" ALL TESTS PASSED");
+        if (failed == 0) $display(" ALL TEST PASSED");
         else             $display(" FAIL: %0d check(s) failed", failed);
         $display("==================================================");
         if (failed != 0) $fatal(1, "Test group 3 failed");

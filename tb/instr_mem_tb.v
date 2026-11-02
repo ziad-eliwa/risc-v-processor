@@ -10,7 +10,7 @@ initial begin
  uut.mem[20]=32'hDEADBEEF;
  addr=80;#2;if(data_out !== 32'hDEADBEEF) begin $display("FAIL custom instruction");errors=errors+1;end
  addr=83;#2;if(data_out !== 32'hDEADBEEF) begin $display("FAIL word addressing");errors=errors+1;end
- if(errors==0) $display("ALL instr_mem TESTS PASSED");else $display("instr_mem FAILED: %0d",errors);
+ if(errors==0) $display("ALL instr_mem TEST PASSED");else $display("instr_mem FAIL: %0d",errors);
  $finish;
 end
 endmodule

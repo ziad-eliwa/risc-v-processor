@@ -65,8 +65,8 @@ initial begin
     #2;
     if (!(alucn === 4'hA)) begin $display("FAIL: SRAI"); errors = errors + 1; end
     else $display("PASS: SRAI");
-    if (errors == 0) $display("ALL alu_control_unit TESTS PASSED");
-    else $display("alu_control_unit: %0d FAILED", errors);
+    if (errors == 0) $display("ALL alu_control_unit TEST PASSED");
+    else $display("alu_control_unit: %0d FAIL", errors);
     $finish;
 end
 endmodule

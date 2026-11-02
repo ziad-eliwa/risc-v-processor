@@ -25,8 +25,8 @@ initial begin
     #2;
     if (!(r === 32'h80000010)) begin $display("FAIL: reserved passes through"); errors = errors + 1; end
     else $display("PASS: reserved passes through");
-    if (errors == 0) $display("ALL shifter TESTS PASSED");
-    else $display("shifter: %0d FAILED", errors);
+    if (errors == 0) $display("ALL shifter TEST PASSED");
+    else $display("shifter: %0d FAIL", errors);
     $finish;
 end
 endmodule

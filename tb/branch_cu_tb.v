@@ -45,8 +45,8 @@ initial begin
     #2;
     if (!(PCJumpSel === 1'b1)) begin $display("FAIL: jump unconditional"); errors = errors + 1; end
     else $display("PASS: jump unconditional");
-    if (errors == 0) $display("ALL branch_cu TESTS PASSED");
-    else $display("branch_cu: %0d FAILED", errors);
+    if (errors == 0) $display("ALL branch_cu TEST PASSED");
+    else $display("branch_cu: %0d FAIL", errors);
     $finish;
 end
 endmodule

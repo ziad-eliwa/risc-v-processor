@@ -12,7 +12,7 @@ initial begin
  @(posedge clk); #1; if(Q !== 0) begin $display("FAIL store 0");errors=errors+1;end
  D=1; #1; if(Q !== 0) begin $display("FAIL hold before clock");errors=errors+1;end
  rst=1; #1; if(Q !== 0) begin $display("FAIL async reset");errors=errors+1;end
- if(errors==0) $display("ALL dff TESTS PASSED");else $display("dff FAILED: %0d",errors);
+ if(errors==0) $display("ALL dff TEST PASSED");else $display("dff FAIL: %0d",errors);
  $finish;
 end
 endmodule

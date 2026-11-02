@@ -21,8 +21,8 @@ initial begin
     #2;
     if (!(Out === 32'd44)) begin $display("FAIL: select D"); errors = errors + 1; end
     else $display("PASS: select D");
-    if (errors == 0) $display("ALL nbit_mux4by1 TESTS PASSED");
-    else $display("nbit_mux4by1: %0d FAILED", errors);
+    if (errors == 0) $display("ALL nbit_mux4by1 TEST PASSED");
+    else $display("nbit_mux4by1: %0d FAIL", errors);
     $finish;
 end
 endmodule

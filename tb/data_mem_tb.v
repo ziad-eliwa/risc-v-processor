@@ -23,7 +23,7 @@ initial begin
  @(posedge clk);#1;MemWrite=0;MemRead=1;funct3=3'b010;addr=16;
  #2;if(data_out !== 32'h123455C4) begin $display("FAIL SH upper half");errors=errors+1;end
  MemRead=0;#2;if(data_out !== 0) begin $display("FAIL read disabled");errors=errors+1;end
- if(errors==0) $display("ALL data_mem TESTS PASSED");else $display("data_mem FAILED: %0d",errors);
+ if(errors==0) $display("ALL data_mem TEST PASSED");else $display("data_mem FAIL: %0d",errors);
  $finish;
 end
 endmodule

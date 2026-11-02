@@ -53,8 +53,8 @@ initial begin
     #2;
     if (!(r === 32'h00000001)) begin $display("FAIL: SLTU true"); errors = errors + 1; end
     else $display("PASS: SLTU true");
-    if (errors == 0) $display("ALL prv32_ALU TESTS PASSED");
-    else $display("prv32_ALU: %0d FAILED", errors);
+    if (errors == 0) $display("ALL prv32_ALU TEST PASSED");
+    else $display("prv32_ALU: %0d FAIL", errors);
     $finish;
 end
 endmodule

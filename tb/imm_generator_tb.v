@@ -49,8 +49,8 @@ initial begin
     #2;
     if (!(imm === 32'hFFFFFFE8)) begin $display("FAIL: JALR negative"); errors = errors + 1; end
     else $display("PASS: JALR negative");
-    if (errors == 0) $display("ALL imm_generator TESTS PASSED");
-    else $display("imm_generator: %0d FAILED", errors);
+    if (errors == 0) $display("ALL imm_generator TEST PASSED");
+    else $display("imm_generator: %0d FAIL", errors);
     $finish;
 end
 endmodule

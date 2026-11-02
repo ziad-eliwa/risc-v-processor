@@ -17,8 +17,8 @@ initial begin
     #2;
     if (!(Out === 32'hFFFFFFFF)) begin $display("FAIL: new input"); errors = errors + 1; end
     else $display("PASS: new input");
-    if (errors == 0) $display("ALL nbit_mux2by1 TESTS PASSED");
-    else $display("nbit_mux2by1: %0d FAILED", errors);
+    if (errors == 0) $display("ALL nbit_mux2by1 TEST PASSED");
+    else $display("nbit_mux2by1: %0d FAIL", errors);
     $finish;
 end
 endmodule
