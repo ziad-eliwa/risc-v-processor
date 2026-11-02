@@ -28,7 +28,7 @@
 module control_unit (
     input [6:0] opcode, input bit20,
     output reg Branch, Jump, MemRead, MemtoReg, MemWrite,
-               ALUSrc1, RegWrite, PCSrc, HultSel,
+               ALUSrc1, RegWrite, PCSrc, HaltSel,
     output reg [2:0] ALUOp,
     output reg [1:0] ALUSrc2
 );
@@ -44,7 +44,7 @@ module control_unit (
         RegWrite = 1'b0;
         PCSrc    = 1'b0;
         ALUOp    = 3'b000;
-        HultSel = 1'b0;
+        HaltSel = 1'b0;
 
         if (opcode[1:0] == 2'b11) begin
             if (opcode[6:2] == 5'b01100) begin
@@ -115,15 +115,10 @@ module control_unit (
                 ALUSrc1  = 1'b1;
                 RegWrite = 1'b1;
                 ALUOp    = 3'b000;
+
             end else if (opcode[6:2] == 5'b11100) begin
-                case(bit20) 
-                    1'b0: begin 
-                        HultSel = 1'b0;
-                    end 
-                    1'b1: begin 
-                        HultSel = 1'b1;
-                    end         
-                endcase
+                // EBREAk
+                HaltSel = bit20;
             end
         end
     end

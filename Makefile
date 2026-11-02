@@ -1,19 +1,19 @@
 # Usage:
 #   make lint                 Verilator lint of everything in rtl/
-#   make test                 run every tb/tb_*.v and tb/tb_*.sv testbench
-#   make test TB=tb_alu       run one testbench (file must be tb/tb_alu.v or .sv)
+#   make test                 run every tb/*_tb.v and tb/*_tb.sv testbench
+#   make test TB=alu_tb       run one testbench (file must be tb/alu_tb.v or .sv)
 #   make clean
 #
 # Assumptions:
 #   - RTL source files are in rtl/
-#   - Testbenches are in tb/ and named tb_*.v or tb_*.sv
+#   - Testbenches are in tb/ and named *_tb.v or *_tb.sv
 #   - Each testbench's top module matches its filename (without extension)
 #
 # Override the RTL top module for linting with: make lint TOP=my_top
 
 TOP ?= cpu
 RTL := $(shell find rtl \( -name '*.v' -o -name '*.sv' \) 2>/dev/null | sort)
-TB_FILES := $(shell find tb \( -name 'tb_*.v' -o -name 'tb_*.sv' \) 2>/dev/null | sort)
+TB_FILES := $(shell find tb \( -name '*_tb.v' -o -name '*_tb.sv' \) 2>/dev/null | sort)
 
 LINT_FLAGS := -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Irtl
 SIM_FLAGS := --binary --timing --trace --Wno-fatal -Irtl
@@ -27,7 +27,7 @@ lint:
 
 test:
 	@test -n "$(RTL)" || { echo "No RTL files found in rtl/"; exit 1; }
-	@test -n "$(TB_FILES)" || { echo "No testbenches found in tb/ (expected tb_*.v or tb_*.sv)"; exit 1; }
+	@test -n "$(TB_FILES)" || { echo "No testbenches found in tb/ (expected *_tb.v or *_tb.sv)"; exit 1; }
 	@if [ -n "$(TB)" ]; then \
 		tb_file=$$(find tb -type f \( -name "$(TB).v" -o -name "$(TB).sv" \) -print -quit); \
 		if [ -z "$$tb_file" ]; then echo "Testbench $(TB) not found in tb/"; exit 1; fi; \

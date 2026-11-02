@@ -23,7 +23,7 @@ module cpu(
     input clk, rst
 );
     wire [31:0] instruction;
-    wire Branch, MemRead, MemtoReg, MemWrite, ALUSrc1, RegWrite, Jump, PCSrc, PCJumpSel, HultSel;
+    wire Branch, MemRead, MemtoReg, MemWrite, ALUSrc1, RegWrite, Jump, PCSrc, PCJumpSel, HaltSel;
     wire [1:0] ALUSrc2;
     wire [2:0] ALUOp;
     wire [3:0] ALUCtrl;
@@ -45,7 +45,7 @@ module cpu(
     
     control_unit CU(.opcode(instruction[6:0]),.bit20(instruction[20]),.Branch(Branch),.Jump(Jump),
         .MemRead(MemRead),.MemtoReg(MemtoReg),.MemWrite(MemWrite),
-        .ALUSrc1(ALUSrc1),.ALUSrc2(ALUSrc2),.RegWrite(RegWrite),.ALUOp(ALUOp),.PCSrc(PCSrc),.HultSel(HultSel));
+        .ALUSrc1(ALUSrc1),.ALUSrc2(ALUSrc2),.RegWrite(RegWrite),.ALUOp(ALUOp),.PCSrc(PCSrc),.HaltSel(HaltSel));
 
     alu_control_unit aluCU(.ALUOp(ALUOp),.funct3(instruction[14:12]),
         .funct7b5(instruction[30]),.alucn(ALUCtrl));
@@ -71,6 +71,6 @@ module cpu(
         
     nbit_mux2by1 mux2(.A(PCOut),.B(readData1),.sel(PCSrc),.Out(jalrOffset));
     wire [31:0] AddRes;
-    nbit_mux2by1 hult(.A(PCOut),.B(AddRes),.sel(HultSel),.Out(PCIn));
+    nbit_mux2by1 halt(.A(AddRes),.B(PCOut),.sel(HaltSel),.Out(PCIn));
     assign AddRes = jalrOffset + branchOffset;    
 endmodule
