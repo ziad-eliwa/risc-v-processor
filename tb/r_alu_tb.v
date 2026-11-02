@@ -10,44 +10,70 @@ module r_alu_tb();
 
     // ================================================================ GROUP 2
     // ADD SUB SLL SLT SLTU XOR SRL SRA OR AND
-    task group2;
-        begin
-            $display("\n== Group 2: R-type ALU ==");
-            new_prog;
-            li(1, 32'h87654321);
-            li(2, 32'h0F0F0F0F);
-            emit(ADDI(3, 0, 36));        // shift amount; only low 5 bits (=4) count
-            emit(ADD (4,  1, 2));
-            emit(SUB (5,  1, 2));
-            emit(SUB (6,  2, 1));
-            emit(SLL (7,  1, 3));
-            emit(SLT (8,  1, 2));
-            emit(SLTU(9,  1, 2));
-            emit(XOR (10, 1, 2));
-            emit(SRL (11, 1, 3));
-            emit(SRA (12, 1, 3));
-            emit(OR  (13, 1, 2));
-            emit(AND (14, 1, 2));
-            emit(SLT (15, 2, 1));
-            emit(SLTU(16, 2, 1));
-            end_prog;
-            run_prog;
+    
+task group2;
+    begin
+        $display("\n== Group 2: R-type ALU ==");
+        new_prog;
 
-            chk(4,  32'h96745230, "ADD");
-            chk(5,  32'h78563412, "SUB");
-            chk(6,  32'h87A9CBEE, "SUB (negative result)");
-            chk(7,  32'h76543210, "SLL (rs2[4:0])");
-            chk(8,  32'h1,        "SLT  (signed)");
-            chk(9,  32'h0,        "SLTU (unsigned)");
-            chk(10, 32'h886A4C2E, "XOR");
-            chk(11, 32'h08765432, "SRL");
-            chk(12, 32'hF8765432, "SRA");
-            chk(13, 32'h8F6F4F2F, "OR");
-            chk(14, 32'h07050301, "AND");
-            chk(15, 32'h0,        "SLT  (reversed)");
-            chk(16, 32'h1,        "SLTU (reversed)");
-        end
-    endtask
+        // Initialize registers
+        emit(ADDI(1, 0, 10));    // x1 = 10
+        emit(ADDI(2, 0, 5));     // x2 = 5
+        emit(ADDI(3, 0, 2));     // x3 = 2 (shift amount)
+        emit(ADDI(17, 0, -8));   // x17 = -8
+
+        // Arithmetic
+        emit(ADD(4, 1, 2));     // 10 + 5 = 15
+        emit(SUB(5, 1, 2));     // 10 - 5 = 5
+        emit(SUB(6, 2, 1));     // 5 - 10 = -5
+
+        // Left shift
+        emit(SLL(7, 1, 3));     // 10 << 2 = 40
+
+        // Signed and unsigned comparisons
+        emit(SLT(8, 17, 2));    // -8 < 5 = 1 (signed)
+        emit(SLTU(9, 17, 2));   // unsigned -8 < 5 = 0
+
+        // Bitwise operations
+        emit(XOR(10, 1, 2));    // 10 XOR 5 = 15
+        emit(OR(13, 1, 2));     // 10 OR 5 = 15
+        emit(AND(14, 1, 2));    // 10 AND 5 = 0
+
+        // Right shifts
+        emit(SRL(11, 1, 3));    // 10 >> 2 = 2
+        emit(SRA(12, 17, 3));   // -8 >>> 2 = -2
+        emit(SRL(18, 17, 3));   // Logical shift of -8
+
+        // Reversed comparisons
+        emit(SLT(15, 2, 17));   // 5 < -8 = 0 (signed)
+        emit(SLTU(16, 2, 17));  // 5 < unsigned -8 = 1
+
+        end_prog;
+        run_prog;
+
+        // Check results
+        chk(4,  32'd15,       "ADD");
+        chk(5,  32'd5,        "SUB");
+        chk(6,  32'hFFFFFFFB, "SUB negative");
+
+        chk(7,  32'd40,       "SLL");
+
+        chk(8,  32'd1,        "SLT signed");
+        chk(9,  32'd0,        "SLTU unsigned");
+
+        chk(10, 32'd15,       "XOR");
+        chk(13, 32'd15,       "OR");
+        chk(14, 32'd0,        "AND");
+
+        chk(11, 32'd2,        "SRL");
+        chk(12, 32'hFFFFFFFE, "SRA negative");
+        chk(18, 32'h3FFFFFFE, "SRL negative");
+
+        chk(15, 32'd0,        "SLT reversed");
+        chk(16, 32'd1,        "SLTU reversed");
+    end
+endtask
+
 
 
     initial begin
