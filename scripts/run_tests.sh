@@ -48,10 +48,11 @@ for tb in "${TBS[@]}"; do
   echo "=== $name ==="
 
   if ! verilator --binary --timing --trace --Wno-fatal \
-        -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Irtl \
-        --top-module "$name" --Mdir "$obj" \
-        "${RTL[@]}" "$tb"  \
-        > "$OUT/$name.compile.log" 2>&1; then
+    -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+    -Irtl -Itb \
+    --top-module "$name" --Mdir "$obj" \
+    "${RTL[@]}" "$tb" \
+    > "$OUT/$name.compile.log" 2>&1; then
     cat "$OUT/$name.compile.log"
     failed+=("$name (compile error)")
     continue
