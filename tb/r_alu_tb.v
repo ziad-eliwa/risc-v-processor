@@ -1,12 +1,12 @@
 `timescale 1ns/1ps
 // RV32I single-cycle CPU standalone test group 2.
 // Compile ONLY ONE tb_*.v top-level testbench at a time.
-module tb_r_alu();
+module r_alu_tb();
     reg clk, rst;
     cpu uut (.clk(clk), .rst(rst));
     always #10 clk = ~clk;
 
-    `include "tb_common.vh"
+    `include "common_tb.vh"
 
     // ================================================================ GROUP 2
     // ADD SUB SLL SLT SLTU XOR SRL SRA OR AND
