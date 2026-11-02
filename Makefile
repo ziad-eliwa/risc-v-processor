@@ -15,8 +15,8 @@ TOP ?= cpu
 RTL := $(shell find rtl \( -name '*.v' -o -name '*.sv' \) 2>/dev/null | sort)
 TB_FILES := $(shell find tb \( -name '*_tb.v' -o -name '*_tb.sv' \) 2>/dev/null | sort)
 
-LINT_FLAGS := -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Irtl
-SIM_FLAGS := --binary --timing --trace --Wno-fatal -Irtl
+LINT_FLAGS := -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Irtl -Itb
+SIM_FLAGS := --binary --timing --trace --Wno-fatal -Irtl -Itb
 BUILD := build/sim
 
 .PHONY: lint test test-one clean
