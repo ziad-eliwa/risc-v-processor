@@ -22,7 +22,7 @@
 
 module instr_mem (input [31:0] addr, output [31:0] data_out);
     reg [31:0] mem [0:63];
-    assign data_out = mem[addr];
+    assign data_out = mem[addr[7:2]];
     
     initial begin
         mem[0]=32'b0000000_00000_00000_000_00000_0110011 ; //add x0, x0, x0

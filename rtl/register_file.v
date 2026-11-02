@@ -33,8 +33,10 @@ module register_file #(parameter N = 32)(
     wire [N-1:0] Q [31:0];    
 
     genvar i;
-    generate 
-        for(i=0; i<32; i=i+1) begin
+    generate
+        nbit_register #(N) register(.clk(clk),.load(0),
+            .rst(rst),.D(0),.Q(Q[0]));
+        for(i=1; i<32; i=i+1) begin
             nbit_register #(N) register(.clk(clk),.load(loads[i]),
             .rst(rst),.D(writedata),.Q(Q[i]));
         end
