@@ -34,10 +34,10 @@ module register_file #(parameter N = 32)(
 
     genvar i;
     generate
-        nbit_register #(N) register(.clk(clk),.load(0),
+        register_n #(N) register(.clk(clk),.load(0),
             .rst(rst),.D(0),.Q(Q[0]));
         for(i=1; i<32; i=i+1) begin
-            nbit_register #(N) register(.clk(clk),.load(loads[i]),
+            register_n #(N) register(.clk(clk),.load(loads[i]),
             .rst(rst),.D(writedata),.Q(Q[i]));
         end
     endgenerate
