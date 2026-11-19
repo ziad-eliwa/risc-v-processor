@@ -20,14 +20,17 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module register_p #(parameter N = 32) (
+module register_p #(
+    parameter N = 32,
+    parameter [N-1:0] RESET_VALUE = {N{1'b0}}
+) (
       input clk, rst, load, input [N-1:0] D, output [N-1:0] Q);
     wire [N-1:0] Dmux;
     genvar i;
     generate
         for(i = 0; i<N; i=i+1) begin
             mux2x1 mux(Q[i], D[i], load, Dmux[i]);
-            dff_p dff(clk, rst, Dmux[i], Q[i]);
+            dff_p #(.RESET_VALUE(RESET_VALUE[i])) dff(clk, rst, Dmux[i], Q[i]);
         end
     endgenerate
 endmodule

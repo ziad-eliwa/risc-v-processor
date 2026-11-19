@@ -20,10 +20,12 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module dff_p(input clk, input rst, input D, output reg Q);
+module dff_p #(
+    parameter RESET_VALUE = 1'b0
+)(input clk, input rst, input D, output reg Q);
      always @ (posedge clk or posedge rst) begin // Asynchronous Reset
          if (rst)
-         Q <= 1'b0;
+         Q <= RESET_VALUE;
          else
          Q <= D;
      end

@@ -1,21 +1,23 @@
-# Single-Cycle RISC-V Processor
+# Pipelined RISC-V Processor
 
-A 32-bit single-cycle RISC-V processor written in Verilog for **CSCE 3301 — Computer Architecture, Project 1** at the American University in Cairo. The project connects a complete RV32I integer datapath and verifies it with component tests and instruction-level simulations.
+A 32-bit, five-stage pipelined RISC-V processor written in Verilog for **CSCE 3301 — Computer Architecture, Project 1 (Milestone III)** at the American University in Cairo. This milestone extends our previous single-cycle RV32I processor by adding pipeline registers, forwarding, hazard detection, branch prediction, and a shared memory for instructions and data.
 
 **Authors:** Ziad Eliwa and Mostafa Abdelwahed.
 
 ## Architecture
 
-The top-level module, [`cpu`](rtl/cpu.v), takes two inputs: `clk` and `rst`. Reset is active-high and asynchronous; it clears the program counter and register file to zero. The CPU has no external data or status ports, so the testbenches inspect its internal registers, memories, and PC.
+The top-level module, [`cpu_p`](Verilog/cpu_p.v), has two inputs, `clk` and `rst`, and one output, `halted`. Reset is active-high and asynchronous. The default starting PC is `0x00000000`, and the testbenches inspect internal registers, memory, and pipeline signals.
 
-- **Single-cycle execution:** instruction fetch, decode, execution, memory access, and writeback use one datapath cycle, without pipelining.
-- **Register file:** 32 registers of 32 bits, two combinational read ports, and a rising-edge write port. Writes to `x0` are disabled, keeping it zero after reset.
-- **ALU:** arithmetic, bitwise logic, signed and unsigned comparisons, and logical and arithmetic shifts. Zero, carry, sign, and overflow flags feed branch decisions.
-- **Control:** separate main, ALU, and branch control units, with an immediate generator for instruction constants and offsets.
-- **PC selection:** advances by four bytes, selects branch/jump targets, or holds at an `EBREAK`. `JAL` and `JALR` write `PC + 4` to the destination register; `JALR` clears target bit 0.
-- **Separate memories:** instruction and data memories each contain 64 words (256 bytes). Instruction fetches and data reads are combinational; data writes occur on the rising clock edge.
+- **Five pipeline stages:** Instruction Fetch (IF), Instruction Decode (ID), Execute (EX), Memory Access (MEM), and Writeback (WB).
+- **Pipeline registers:** `IF/ID`, `ID/EX`, `EX/MEM`, and `MEM/WB` carry instructions, data, and control signals between stages. They are built using the reusable `register_p` module and update on rising clock edges.
+- **Register file:** 32 registers of 32 bits, two combinational read ports, and falling-edge writes using `register_n`. Register `x0` remains zero.
+- **ALU and control:** Support arithmetic, bitwise operations, shifts, comparisons, load/store address calculations, branches, and jumps.
+- **Forwarding:** Results from EX/MEM and MEM/WB can be forwarded to the ALU operands when a newer instruction depends on an older result.
+- **Hazard detection:** Load-use dependencies stall the PC and IF/ID register while inserting a bubble into ID/EX. Incorrectly predicted branches flush younger instructions.
+- **Unified memory:** Instructions and data use one single-ported, byte-addressable memory. The default size is **1,024 words (4 KiB)**.
+- **Halting:** `EBREAK` stops new instructions from entering the pipeline, allows older instructions to finish, and then asserts `halted`.
 
-![Single-cycle RISC-V datapath](docs/datapath/RISCV%20Single%20Cycle%20Datapath.png)
+![Five-stage pipelined RV32I datapath](docs/MS3/RV32i%20Pipelined%20Datapath.png)
 
 ## Implemented Instructions
 
@@ -28,130 +30,129 @@ The top-level module, [`cpu`](rtl/cpu.v), takes two inputs: `clk` and `rst`. Res
 | Stores | `SB`, `SH`, `SW` |
 | Conditional branches | `BEQ`, `BNE`, `BLT`, `BGE`, `BLTU`, `BGEU` |
 | Jumps | `JAL`, `JALR` |
-| Simplified system and fence behavior | `FENCE`, `FENCE.TSO`, `PAUSE`, and `ECALL` act as no-ops; `EBREAK` holds the PC |
+| Simplified system and fence behavior | `FENCE`, `FENCE.TSO`, `PAUSE`, and `ECALL` act as no-ops; `EBREAK` halts execution |
 
-The system behavior is specific to this educational implementation. It does not implement architectural traps, privileged execution, or CSRs. Multiplication/division and compressed instructions are also outside the design's scope.
+The instruction behavior follows the educational requirements of this project. Compressed instructions, multiplication/division, privileged operations, CSRs, and normal trap handling are not included.
+
+## Bonus Features
+
+### Bonus 1: 2-Bit Dynamic Branch Prediction
+
+The processor uses a **Branch Target Buffer (BTB)** with a two-bit saturating counter for each entry. The default BTB has 32 entries. Each entry stores a valid bit, the branch PC tag, the predicted target address, and the counter.
+
+The counter has four states: strongly not taken (`00`), weakly not taken (`01`), weakly taken (`10`), and strongly taken (`11`). New entries start in a not-taken state. The predictor uses the saved target when it predicts taken. Branches and jumps are checked in the EX stage; if the direction or target is wrong, the processor corrects the PC and flushes younger instructions. The predictor is then updated using the actual result.
+
+The [`branch_predictor.v`](Verilog/branch_predictor.v), [`mispredict_detector.v`](Verilog/mispredict_detector.v), and [`pc_selector.v`](Verilog/pc_selector.v) modules handle this behavior.
+
+### Bonus 2: Priority Arbitration with Pipeline Stalling
+
+Because instructions and data use one memory port, instruction fetch and a MEM-stage load/store cannot access memory at the same time. Instead of fetching one instruction every two clock cycles, the processor gives **priority to the MEM stage** whenever a load or store needs the port.
+
+When this happens, the PC is held and an instruction-fetch bubble is inserted. The older instructions in the pipeline can continue. Instruction fetching resumes as soon as the port is free. This avoids a fixed fetch delay on cycles without data-memory operations.
+
+The memory selection multiplexers are connected in [`cpu_p.v`](Verilog/cpu_p.v), and the stall logic is in [`hazard_detection_unit.v`](Verilog/hazard_detection_unit.v).
+
+## RTL Implementation
+
+The CPU uses separate modules to make the design easier to inspect and debug. Pipeline storage uses `register_p`, and the datapath uses the supplied `nbit_mux4by1` and `nbit_mux2by1` modules for operand and address selection.
+
+| Files in `Verilog/` | Role |
+| --- | --- |
+| `cpu_p.v` | Connects the full five-stage datapath |
+| `control_unit.v`, `alu_control_unit.v`, `branch_cu.v` | Decode instructions and select ALU and branch behavior |
+| `prv32_ALU.v`, `shifter.v` | Arithmetic, logic, comparisons, and shifts |
+| `imm_generator.v`, `defines.v` | Immediate values and shared definitions |
+| `register_file.v`, `decoder_5_by_32.v` | Architectural registers and register write selection |
+| `register_p.v`, `register_n.v`, `dff_p.v`, `dff_n.v` | Rising-edge and falling-edge storage |
+| `nbit_mux2by1.v`, `nbit_mux4by1.v`, `mux2x1.v` | Datapath selection |
+| `forwarding_unit.v` | Forward values from later pipeline stages |
+| `hazard_detection_unit.v` | Generate stalls and pipeline flushes |
+| `branch_predictor.v`, `mispredict_detector.v`, `pc_selector.v` | Predict branches and recover from mispredictions |
+| `single_ported_mem.v` | Shared instruction and data memory |
+
+The pipeline registers update on the rising edge. Architectural register writes use the falling edge, so values written during WB can be read before the next rising edge. The shared memory has asynchronous reads and rising-edge writes.
 
 ## Repository Layout
 
 ```text
 .
-├── rtl/                    # CPU and supporting Verilog modules
-├── tb/                     # 20 testbenches and shared instruction helpers
-├── scripts/run_tests.sh    # Test runner with logs and pass/fail summary
-├── constraints/            # FPGA pin constraints for clk and rst
-├── docs/
-│   ├── MS2_Report.pdf      # Milestone II design and verification report
-│   ├── datapath/           # Processor datapath diagram
-│   └── sim_results/        # Saved simulation screenshots
-├── sw/                     # Reserved for software programs
-├── .github/workflows/     # Verilator lint and simulation CI
-├── Makefile                # Lint, simulation, and cleanup targets
-└── LICENSE                 # MIT license
+├── Verilog/                         # Working RTL modules, including cpu_p.v
+├── test/
+│   ├── programs/                   # Eight .hex programs and expected results
+│   ├── tb_cpu_p.sv                  # Full processor testbench
+│   ├── tb_branch_predictor.sv       # Predictor testbench
+│   ├── tb_datapath_primitives.sv    # Register and mux testbench
+│   ├── generate_tests.py           # Test images and expected states
+│   ├── run_tests.py                # Icarus Verilog test runner
+│   ├── check_modularity.py         # Static module/width checks
+│   └── check_pipeline_schedule.py  # Independent Python pipeline model
+├── docs/                            # Datapath, report, and debugging guide
+├── journal/                         # Team journal files
+├── reference_original/              # Original supplied Verilog files
+├── Makefile
+└── README.md
 ```
 
-The main RTL modules are:
+This layout matches the modular project package. If the files are moved into the earlier repository's `rtl/` and `tb/` folders, update the paths in the commands and test runner accordingly.
 
-| Files in `rtl/` | Role |
+## Testing and Verification
+
+The full-processor testbench runs these eight programs:
+
+| Program | Main checks |
 | --- | --- |
-| `cpu.v` | Connects the processor datapath |
-| `control_unit.v`, `alu_control_unit.v`, `branch_cu.v` | Decode instructions and select ALU operations and branch outcomes |
-| `prv32_ALU.v`, `shifter.v` | Execute arithmetic, logic, comparisons, and shifts |
-| `imm_generator.v`, `defines.v` | Extract immediates and define shared instruction fields/constants |
-| `register_file.v`, `decoder_5_by_32.v` | Store registers and select register writes |
-| `instr_mem.v`, `data_mem.v` | Provide instruction and data storage |
-| `dff.v`, `nbit_register.v`, `mux2x1.v`, `nbit_mux2by1.v`, `nbit_mux4by1.v` | Provide storage and datapath selection primitives |
+| `alu_all.mem` | Arithmetic, logic, shifts, upper immediates, and simplified system instructions |
+| `loads_stores.mem` | Byte, halfword, and word loads/stores, including sign extension |
+| `data_hazards.mem` | Forwarding, load-use stalls, store-data dependencies, and branch dependencies |
+| `control_transfers.mem` | Conditional branches, `JAL`, `JALR`, and wrong-path flushing |
+| `branch_training.mem` | Repeated branch outcomes and predictor training |
+| `mem_arbitration.mem` | Repeated loads/stores and shared-memory port conflicts |
+| `signed_boundaries.mem` | Signed versus unsigned comparisons and right shifts |
+| `btb_alias.mem` | Two control transfers sharing a BTB index |
 
-## Getting Started
+Each program has an expected register file image and an expected final memory image. The full-processor testbench compares these with the results at `EBREAK` and also checks for important stall and prediction events.
 
-Install **Verilator**, **GNU Make**, and a **C++ compiler**. The shell test runner additionally uses Bash and standard Unix utilities, including `timeout`.
-
-For Ubuntu/Debian:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y verilator build-essential
-```
-
-Run the following commands from the repository root:
-
-```bash
-# Lint the complete CPU hierarchy
-make lint
-
-# Compile and run all testbenches
-make test
-
-# Run a single testbench (omit the .v extension)
-make test TB=branches_jumps_tb
-```
-
-The Makefile builds each simulation under `build/sim/obj_<testbench>/` and runs its `V<testbench>` executable. To remove the generated `build/` directory, run `make clean`.
-
-For saved logs and an aggregate pass/fail summary, use the shell runner:
-
-```bash
-# Run the entire suite
-bash scripts/run_tests.sh
-
-# Run selected testbenches
-bash scripts/run_tests.sh prv32_ALU_tb branches_jumps_tb
-```
-
-The runner saves compilation logs to `build/sim/<testbench>.compile.log` and simulation output to `build/sim/<testbench>.log`. It checks simulator exit status, rejects output containing `FAIL`, and requires a `TEST PASSED` or `TESTS PASSED` message. It continues through the selected tests and returns a nonzero status if any fail.
-
-By default, the runner stores compiled simulation objects under `/tmp/riscv-processor-sim-<uid>/` and limits each simulation run to 120 seconds. Override these with `SIM_OBJ_DIR` and `SIM_TIMEOUT`, respectively. `make clean` removes `build/`; the runner's temporary object directory remains available for reuse.
-
-## Verification
-
-There are **15 component testbenches** for the ALU, shifter, control units, immediate generator, memories, register file, decoder, multiplexers, register, and flip-flop. Another **five testbenches** execute programs on the integrated CPU:
-
-| Testbench | Coverage |
-| --- | --- |
-| `u_i_alu_tb` | Upper-immediate and immediate ALU instructions |
-| `r_alu_tb` | Register-register arithmetic, logic, shifts, and comparisons |
-| `loads_stores_tb` | Byte, halfword, and word accesses, including signed and unsigned loads |
-| `branches_jumps_tb` | Taken and not-taken branches, a backward loop, and jump/link behavior |
-| `system_fence_tb` | Fence/system no-ops and the `EBREAK` PC hold |
-
-See [`tb/README.md`](tb/README.md) for the testbench inventory. Each testbench is compiled as a separate top-level module; [`common_tb.vh`](tb/common_tb.vh) is a shared include, not a standalone testbench. When compiling manually, supply both `-Irtl` and `-Itb` for the include files.
-
-GitHub Actions runs `make lint` and `make test` on pushes to `main` and on pull requests. Simulation build outputs are uploaded as the `sim-output` artifact with a seven-day retention period. The shell runner's additional log-based checks apply when running `scripts/run_tests.sh`; the Makefile relies on simulator exit status.
+**Verification status:** The static modularity check and independent Python pipeline model pass all eight programs. These checks do **not** prove that the Verilog or FPGA implementation works. RTL simulations, Vivado synthesis, timing analysis, and board testing should be completed and recorded separately before submission.
 
 ## Loading Programs
 
-Instruction memory starts filled with `NOP` (`ADDI x0, x0, 0`, encoding `0x00000013`). CPU testbenches load machine instructions directly into `uut.iMem.mem`; no assembler or executable loader is required by the supplied tests.
+The shared memory is initialized using `$readmemh`. Program images contain one 32-bit hexadecimal word per line; the first word is at byte address `0x00000000`. With the default `MEM_ADDR_WIDTH=10`, the memory holds 1,024 words (4 KiB).
 
-The shared testbench include provides mnemonic encoders such as `ADDI`, `ADD`, `LW`, and `BEQ`, plus helpers to assemble and execute small programs. Inside an existing CPU testbench, a program can be built with:
+To initialize a program in a testbench:
 
 ```verilog
-new_prog;
-emit(ADDI(1, 0, 10));  // x1 = 10
-emit(ADDI(2, 0, 20));  // x2 = 20
-emit(ADD(3, 1, 2));    // x3 = 30
-end_prog;              // Emit JAL x0, 0 to stay in a self-loop
-run_prog;              // Load instructions, reset, and run 100 cycles
-chk(3, 32'd30, "addition");
+cpu_p #(
+    .MEM_ADDR_WIDTH(10),
+    .MEM_INIT_FILE("program.mem")
+) dut (
+    .clk(clk),
+    .rst(rst),
+    .halted(halted)
+);
 ```
 
-These helpers assume a CPU instance named `uut` with `clk` and `rst` driven by the testbench. Programs must fit within the 64-word instruction memory. To add a test, use a filename ending in `_tb.v` or `_tb.sv` and give its top module the same name as the file without its extension. Both test entry points discover these files automatically.
+In Vivado, add `program.mem` as a memory initialization source and make sure its filename or path matches `MEM_INIT_FILE`. The default reset PC is zero. Instruction addresses must be word-aligned. Programs and data share the same address space, so a program must not accidentally overwrite its own instructions.
+
+The included directed tests use `.hex` files in `test/programs/`; these are also compatible with `$readmemh`. The optional greenhouse monitoring program is a larger demonstration that processes temperature readings and writes statistics and alarms to memory.
 
 ## Memory Behavior and Limits
 
-- Instruction memory indexes only `PC[7:2]`, so addresses outside its 256-byte window alias back into the array. Keep program targets within the allocated range and use word-aligned instruction addresses.
-- Data memory accepts byte addresses `0` through `255` and uses little-endian byte lanes. Halfword accesses require two-byte alignment; word accesses require four-byte alignment.
-- Misaligned halfword/word loads and out-of-range data reads return zero. Corresponding stores are ignored; no exception is raised.
-- Reset clears the PC and registers. It does not clear either memory, and data memory has no explicit initialization; programs should store values before loading them.
-- The FPGA constraints assign pins for `clk` and `rst`. Check the pin assignments against your target board before using them.
+- The default memory size is 4 KiB, shared by instructions and data. The size can be changed with `MEM_ADDR_WIDTH`.
+- Memory is little-endian and supports bytes, halfwords, and words. Halfwords must be two-byte aligned and words must be four-byte aligned.
+- Misaligned halfword/word reads return zero, while misaligned stores are ignored. No misalignment exception is generated.
+- Reads outside the configured memory range return zero, and stores outside the range are ignored.
+- Reset clears the PC, pipeline registers, and register file; it does not clear the memory contents.
+- Memory reads are asynchronous. On an FPGA this may infer distributed memory rather than block RAM, depending on synthesis.
+- Register file writes use the falling clock edge, which requires timing checks when targeting the FPGA.
+- No interrupt controller, CSR file, privileged mode, or exception-handling system is implemented.
 
 ## Documentation
 
-- [Milestone II report](docs/MS2_Report.pdf)
-- [Datapath diagram](docs/datapath/RISCV%20Single%20Cycle%20Datapath.png)
-- [Simulation screenshots](docs/sim_results/)
-- [Ziad Eliwa's milestone journal](docs/Ziad_Eliwa_Journal_MS2.pdf)
-- [Mostafa Abdelwahed's milestone journal](docs/Mostafa_Abdelwahed_Journal_MS2.pdf)
+- [Datapath diagram](docs/MS3/RV32i%20Pipelined%20Datapath.png)
+- [Design and implementation report](docs/MS3/CSCE_3301___Computer_Architecture_Project_1_Report_MS3.pdf)
+- [Testing guide](tests/README.md)
+- Milestone III individual journals for Ziad Eliwa and Mostafa Abdelwahed (add the completed files to `journal/` before submission)
 
 ## License
 
-This project is available under the [MIT License](LICENSE).
+The Milestone II repository used the MIT License. Keep its `LICENSE` file when moving this milestone into the same repository.

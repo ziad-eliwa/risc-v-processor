@@ -1,60 +1,30 @@
-`timescale 1ns / 1ps
-
-/*******************************************************************
-*
-* Module: prv32_ALU.v
-* Project: risc-v-processor
-* Author: Ziad Eliwa ziadeliwa@aucegypt.end
-          Mostafa Abdelwahed mostafabahaa@aucegypt.edu
-* Description: put your description here
-*
-* Change history: 26/10/26 – Added verilog source from attached sources - Ziad Eliwa
-* 30/10/26 – Removed shamt and unused variables - Mostafa Abdelwahed
-*
-**********************************************************************/
-
-
+`timescale 1ns/1ps
 module prv32_ALU(
-	input   wire [31:0] a, b,
-	output  reg  [31:0] r,
-	output  wire        cf, zf, vf, sf,
-	input   wire [3:0]  alucn
+    input wire [31:0] a, b,
+    output reg [31:0] r,
+    output wire cf, zf, vf, sf,
+    input wire [3:0] alucn
 );
-
-    wire [31:0] add, op_b;
-    
-    assign op_b = (~b);
-    
-    assign {cf, add} = alucn[0] ? (a + op_b + 1'b1) : (a + b);
-    
-    assign zf = (add == 0);
-    assign sf = add[31];
-    assign vf = (a[31] ^ (op_b[31]) ^ add[31] ^ cf);
-    
-    wire[31:0] sh;
-    shifter shifter0(.a(a), .shamt(b[4:0]), .stype(alucn[1:0]),  .r(sh));
-    
-    always @ * begin
-        r = 0;
-        (* parallel_case *)
+    // Flags always describe a-b, so branch comparisons remain valid.
+    wire [32:0] difference = {1'b0,a} + {1'b0,~b} + 33'd1;
+    assign cf = difference[32];
+    assign zf = difference[31:0] == 32'b0;
+    assign sf = difference[31];
+    assign vf = (a[31] != b[31]) && (difference[31] != a[31]);
+    wire [31:0] shifted;
+    shifter shift_unit(.a(a), .shamt(b[4:0]), .stype(alucn[1:0]), .r(shifted));
+    always @* begin
         case (alucn)
-            // arithmetic
-            4'b00_00 : r = add; //add, addi, lw, lh, lhu, lb, lbu, sw. sh, sb, jal, jalr, auipc
-            4'b00_01 : r = add; //sub, beq, bne, blt, bge, bltu, bgeu
-            4'b00_11 : r = b;   //lui
-            // logic
-            4'b01_00:  r = a | b; //or, ori
-            4'b01_01:  r = a & b; //and, andi
-            4'b01_11:  r = a ^ b; //xor, xori
-            // shift
-            4'b10_00:  r=sh; //sll, slli
-            4'b10_01:  r=sh; //srl, srli
-            4'b10_10:  r=sh; //sra, srai
-            // slt & sltu
-            4'b11_01:  r = {31'b0,(sf != vf)}; //slt, slti
-            4'b11_11:  r = {31'b0,(~cf)}; //sltu, sltiu
-            
-            default: ;
+            4'b0000: r = a + b;
+            4'b0001: r = a - b;
+            4'b0011: r = b;
+            4'b0100: r = a | b;
+            4'b0101: r = a & b;
+            4'b0111: r = a ^ b;
+            4'b1000, 4'b1001, 4'b1010: r = shifted;
+            4'b1101: r = {31'b0, ($signed(a) < $signed(b))};
+            4'b1111: r = {31'b0, (a < b)};
+            default: r = 32'b0;
         endcase
     end
 endmodule
